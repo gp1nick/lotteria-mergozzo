@@ -191,64 +191,46 @@
   <script>
     // Configurazione Supabase
     const SUPABASE_URL = "https://tuhokpudkyyxxdhalcnh.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
 
-    // Inizializza Supabase (nota la S maiuscola)
-    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Inizializza Supabase
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const grid = document.getElementById('grid');
+const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
+const warnText = document.getElementById('warnText');
+const adminBtn = document.getElementById('adminBtn');
+const logoutAdminBtn = document.getElementById('logoutAdminBtn');
+const adminPanel = document.getElementById('adminPanel');
+const resetBtn = document.getElementById('resetBtn');
+const printBtn = document.getElementById('printBtn');
+const countdownEl = document.getElementById('countdown');
 
-    // Riferimenti elementi DOM
-    const countdownEl = document.getElementById('countdown');
-    const grid = document.getElementById('grid');
-    const adminBtn = document.getElementById('adminBtn');
-    const logoutAdminBtn = document.getElementById('logoutAdminBtn');
-    const adminPanel = document.getElementById('adminPanel');
-    const resetBtn = document.getElementById('resetBtn');
-    const printBtn = document.getElementById('printBtn');
-    const warnText = document.getElementById('warnText');
-    const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
+function getColorForNumber(num) {
+  return num % 2 === 0 ? '#d4f4dd' : '#f0fff4';
+}
+// Riferimenti DOM
+// ... (come nel tuo codice)
 
-    let adminLoggedIn = false;
-    let data = {};
-    let selectingNumbers = new Set();
+let adminLoggedIn = false;
+let selectingNumbers = new Set();
 
-    const targetDate = new Date("2025-05-28T14:00:00");
+const targetDate = new Date("2025-05-28T14:00:00");
 
-    // Colori per i numeri
-    function getColorForNumber(n) {
-      const colors = [
-        '#FFCDD2','#F8BBD0','#E1BEE7','#D1C4E9','#C5CAE9',
-        '#BBDEFB','#B3E5FC','#B2EBF2','#B2DFDB','#C8E6C9',
-        '#DCEDC8','#F0F4C3','#FFF9C4','#FFECB3','#FFE0B2',
-        '#FFCCBC','#D7CCC8','#CFD8DC'
-      ];
-      return colors[(n-1) % colors.length];
-    }
-
-    // Funzione per aggiornare il countdown
-    function updateCountdown() {
-      const now = new Date();
-      const diff = targetDate - now;
-      if (diff <= 0) {
-        countdownEl.textContent = "La lotteria è iniziata o è terminata!";
-        return;
-      }
-      const days = Math.floor(diff / (1000*60*60*24));
-      const hours = Math.floor((diff / (1000*60*60)) % 24);
-      const minutes = Math.floor((diff / (1000*60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 
-
-
-
-
-
-ChatGPT ha detto:
-60);
-countdownEl.textContent = Countdown: ${days}g ${hours}h ${minutes}m ${seconds}s;
+// Funzione aggiorna countdown (come prima)
+function updateCountdown() {
+  const now = new Date();
+  const diff = targetDate - now;
+  if (diff <= 0) {
+    countdownEl.textContent = "La lotteria è iniziata o è terminata!";
+    return;
+  }
+  const days = Math.floor(diff / (1000*60*60*24));
+  const hours = Math.floor((diff / (1000*60*60)) % 24);
+  const minutes = Math.floor((diff / (1000*60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+  countdownEl.textContent = `Countdown: ${days}g ${hours}h ${minutes}m ${seconds}s`;
 }
 
-javascript
-Copia
-Modifica
 // Costruzione griglia numeri 1-90
 function buildGrid() {
   grid.innerHTML = '';
@@ -260,7 +242,6 @@ function buildGrid() {
     cell.innerHTML = `<div class="number">${i}</div><div class="name"></div>`;
     grid.appendChild(cell);
 
-    // Evento click per selezionare/deselezionare numero
     cell.addEventListener('click', () => {
       if (cell.classList.contains('selected') || adminLoggedIn) return;
       if (selectingNumbers.has(i)) {
@@ -276,28 +257,71 @@ function buildGrid() {
   }
 }
 
-// Pulsante conferma selezione
-confirmSelectionBtn.addEventListener('click', async () => {
-  if (selectingNumbers.size === 0) return;
-  // Qui puoi aggiungere codice per salvare la selezione su Supabase
-  // Per ora mostriamo solo alert e blocchiamo i numeri
-  alert(`Hai selezionato i numeri: ${Array.from(selectingNumbers).join(', ')}`);
+// Carica selezioni da Supabase e blocca i numeri già presi
+async function loadSelections() {
+  const { data, error } = await supabase
+    .from('lottery_selections')
+    .select('*');
 
+  if (error) {
+    console.error("Errore caricamento selezioni:", error);
+    warnText.textContent = "Errore caricamento dati. Riprova più tardi.";
+    return;
+  }
+
+  data.forEach(entry => {
+    const num = entry.number;
+    const name = entry.name;
+    const cell = grid.querySelector(`.cell[data-number="${num}"]`);
+    if (cell) {
+      cell.classList.add('selected');
+      cell.querySelector('.name').textContent = name;
+      cell.classList.remove('selecting');
+    }
+  });
+}
+
+// Salva selezioni scelte su Supabase (inserisce nel DB)
+async function saveSelections() {
+  if (selectingNumbers.size === 0) return;
+
+  const name = prompt("Inserisci il nome del bambino o partecipante:");
+  if (!name || name.trim() === '') {
+    warnText.textContent = "Il nome è obbligatorio per confermare la selezione.";
+    return;
+  }
+
+  const toInsert = Array.from(selectingNumbers).map(num => ({ number: num, name: name.trim() }));
+
+  const { data, error } = await supabase
+    .from('lottery_selections')
+    .insert(toInsert);
+
+  if (error) {
+    console.error("Errore salvataggio:", error);
+    warnText.textContent = "Errore nel salvataggio. Prova di nuovo.";
+    return;
+  }
+
+  // Aggiorna UI
   selectingNumbers.forEach(num => {
     const cell = grid.querySelector(`.cell[data-number="${num}"]`);
     if (cell) {
       cell.classList.remove('selecting');
       cell.classList.add('selected');
-      cell.querySelector('.name').textContent = "Prenotato";
+      cell.querySelector('.name').textContent = name.trim();
     }
   });
   selectingNumbers.clear();
   confirmSelectionBtn.disabled = true;
-});
+  warnText.textContent = "Selezione salvata correttamente!";
+}
 
-// Pulsante Accesso Admin (simulazione semplice)
+// Eventi pulsanti
+confirmSelectionBtn.addEventListener('click', saveSelections);
+
+// Admin login/logout (qui semplice toggle)
 adminBtn.addEventListener('click', () => {
-  // Qui potresti mettere login vero (prompt, password ecc)
   adminLoggedIn = true;
   adminPanel.style.display = 'block';
   adminBtn.style.display = 'none';
@@ -305,7 +329,6 @@ adminBtn.addEventListener('click', () => {
   warnText.textContent = 'Accesso Admin attivo.';
 });
 
-// Pulsante Logout Admin
 logoutAdminBtn.addEventListener('click', () => {
   adminLoggedIn = false;
   adminPanel.style.display = 'none';
@@ -314,8 +337,8 @@ logoutAdminBtn.addEventListener('click', () => {
   warnText.textContent = '';
 });
 
-// Pulsante Annulla numero (solo admin)
-resetBtn.addEventListener('click', () => {
+// Annulla numero (admin)
+resetBtn.addEventListener('click', async () => {
   if (!adminLoggedIn) return;
   const numToReset = prompt("Inserisci il numero da annullare:");
   const num = parseInt(numToReset);
@@ -323,24 +346,36 @@ resetBtn.addEventListener('click', () => {
     alert("Numero non valido.");
     return;
   }
+
+  // Cancella da DB
+  const { error } = await supabase
+    .from('lottery_selections')
+    .delete()
+    .eq('number', num);
+
+  if (error) {
+    alert("Errore nella cancellazione.");
+    return;
+  }
+
+  // Aggiorna UI
   const cell = grid.querySelector(`.cell[data-number="${num}"]`);
-  if (cell && cell.classList.contains('selected')) {
+  if (cell) {
     cell.classList.remove('selected');
     cell.querySelector('.name').textContent = "";
     warnText.textContent = `Numero ${num} annullato.`;
-  } else {
-    alert("Numero non prenotato o già libero.");
   }
 });
 
-// Pulsante Stampa tabellone
+// Stampa tabellone
 printBtn.addEventListener('click', () => {
   window.print();
 });
 
 // Avvio pagina
-window.onload = () => {
+window.onload = async () => {
   buildGrid();
+  await loadSelections();
   updateCountdown();
   setInterval(updateCountdown, 1000);
 };
