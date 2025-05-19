@@ -194,7 +194,7 @@
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
 
 // Inizializza Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const grid = document.getElementById('grid');
 const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
 const warnText = document.getElementById('warnText');
@@ -259,7 +259,7 @@ function buildGrid() {
 
 // Carica selezioni da Supabase e blocca i numeri già presi
 async function loadSelections() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('lottery_selections')
     .select('*');
 
@@ -293,7 +293,7 @@ async function saveSelections() {
 
   const toInsert = Array.from(selectingNumbers).map(num => ({ number: num, name: name.trim() }));
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('lottery_selections')
     .insert(toInsert);
 
@@ -348,7 +348,7 @@ resetBtn.addEventListener('click', async () => {
   }
 
   // Cancella da DB
-  const { error } = await supabase
+  const { error } = await supabaseClient
     .from('lottery_selections')
     .delete()
     .eq('number', num);
