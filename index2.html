@@ -185,14 +185,18 @@
   <div id="warnText"></div>
   <button id="confirmSelectionBtn" disabled>Conferma selezione</button>
 
-  <!-- Carica prima la libreria Supabase -->
+  <!-- Libreria Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 
   <script>
+    // Configurazione Supabase
     const SUPABASE_URL = "https://tuhokpudkyyxxdhalcnh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Inizializza Supabase (nota la S maiuscola)
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Riferimenti elementi DOM
     const countdownEl = document.getElementById('countdown');
     const grid = document.getElementById('grid');
     const adminBtn = document.getElementById('adminBtn');
@@ -209,6 +213,7 @@
 
     const targetDate = new Date("2025-05-28T14:00:00");
 
+    // Colori per i numeri
     function getColorForNumber(n) {
       const colors = [
         '#FFCDD2','#F8BBD0','#E1BEE7','#D1C4E9','#C5CAE9',
@@ -217,3 +222,126 @@
         '#FFCCBC','#D7CCC8','#CFD8DC'
       ];
       return colors[(n-1) % colors.length];
+    }
+
+    // Funzione per aggiornare il countdown
+    function updateCountdown() {
+      const now = new Date();
+      const diff = targetDate - now;
+      if (diff <= 0) {
+        countdownEl.textContent = "La lotteria è iniziata o è terminata!";
+        return;
+      }
+      const days = Math.floor(diff / (1000*60*60*24));
+      const hours = Math.floor((diff / (1000*60*60)) % 24);
+      const minutes = Math.floor((diff / (1000*60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 
+
+
+
+
+
+ChatGPT ha detto:
+60);
+countdownEl.textContent = Countdown: ${days}g ${hours}h ${minutes}m ${seconds}s;
+}
+
+javascript
+Copia
+Modifica
+// Costruzione griglia numeri 1-90
+function buildGrid() {
+  grid.innerHTML = '';
+  for (let i = 1; i <= 90; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.style.backgroundColor = getColorForNumber(i);
+    cell.dataset.number = i;
+    cell.innerHTML = `<div class="number">${i}</div><div class="name"></div>`;
+    grid.appendChild(cell);
+
+    // Evento click per selezionare/deselezionare numero
+    cell.addEventListener('click', () => {
+      if (cell.classList.contains('selected') || adminLoggedIn) return;
+      if (selectingNumbers.has(i)) {
+        selectingNumbers.delete(i);
+        cell.classList.remove('selecting');
+      } else {
+        selectingNumbers.add(i);
+        cell.classList.add('selecting');
+      }
+      confirmSelectionBtn.disabled = selectingNumbers.size === 0;
+      warnText.textContent = '';
+    });
+  }
+}
+
+// Pulsante conferma selezione
+confirmSelectionBtn.addEventListener('click', async () => {
+  if (selectingNumbers.size === 0) return;
+  // Qui puoi aggiungere codice per salvare la selezione su Supabase
+  // Per ora mostriamo solo alert e blocchiamo i numeri
+  alert(`Hai selezionato i numeri: ${Array.from(selectingNumbers).join(', ')}`);
+
+  selectingNumbers.forEach(num => {
+    const cell = grid.querySelector(`.cell[data-number="${num}"]`);
+    if (cell) {
+      cell.classList.remove('selecting');
+      cell.classList.add('selected');
+      cell.querySelector('.name').textContent = "Prenotato";
+    }
+  });
+  selectingNumbers.clear();
+  confirmSelectionBtn.disabled = true;
+});
+
+// Pulsante Accesso Admin (simulazione semplice)
+adminBtn.addEventListener('click', () => {
+  // Qui potresti mettere login vero (prompt, password ecc)
+  adminLoggedIn = true;
+  adminPanel.style.display = 'block';
+  adminBtn.style.display = 'none';
+  logoutAdminBtn.style.display = 'inline-block';
+  warnText.textContent = 'Accesso Admin attivo.';
+});
+
+// Pulsante Logout Admin
+logoutAdminBtn.addEventListener('click', () => {
+  adminLoggedIn = false;
+  adminPanel.style.display = 'none';
+  adminBtn.style.display = 'inline-block';
+  logoutAdminBtn.style.display = 'none';
+  warnText.textContent = '';
+});
+
+// Pulsante Annulla numero (solo admin)
+resetBtn.addEventListener('click', () => {
+  if (!adminLoggedIn) return;
+  const numToReset = prompt("Inserisci il numero da annullare:");
+  const num = parseInt(numToReset);
+  if (isNaN(num) || num < 1 || num > 90) {
+    alert("Numero non valido.");
+    return;
+  }
+  const cell = grid.querySelector(`.cell[data-number="${num}"]`);
+  if (cell && cell.classList.contains('selected')) {
+    cell.classList.remove('selected');
+    cell.querySelector('.name').textContent = "";
+    warnText.textContent = `Numero ${num} annullato.`;
+  } else {
+    alert("Numero non prenotato o già libero.");
+  }
+});
+
+// Pulsante Stampa tabellone
+printBtn.addEventListener('click', () => {
+  window.print();
+});
+
+// Avvio pagina
+window.onload = () => {
+  buildGrid();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+};
+</script> </body> </html> ```
