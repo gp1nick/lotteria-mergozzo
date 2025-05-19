@@ -9,23 +9,19 @@
   <h1>Test Supabase createClient</h1>
   <div id="output">Caricamento...</div>
 
-  <!-- Carico prima la libreria Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <!-- Libreria Supabase con defer -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 
-  <!-- Poi il mio script che usa createClient -->
-  <script>
-    window.onload = () => {
-      const SUPABASE_URL = "https://tuhokpudkyyxxdhalcnh.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
+  <!-- Script che usa createClient -->
+  <script defer>
+    const SUPABASE_URL = "https://tuhokpudkyyxxdhalcnh.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
 
-      // Funzione createClient ora ESISTE e la posso usare
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // Salvo in window per eventuali debug/funzioni esterne
-      window.supabaseClient = supabase;
+    window.supabaseClient = supabase;
 
-      document.getElementById('output').textContent = "Supabase client creato con successo!";
-    };
+    document.getElementById('output').textContent = "Supabase client creato con successo!";
   </script>
 </body>
 </html>
