@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Lotteria Asilo Mergozzo</title>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet" />
-  <style>
- * {
+  <style>* {
       margin: 0; padding: 0; box-sizing: border-box;
     }
     body, html {
@@ -193,11 +192,10 @@
     const SUPABASE_URL = "https://tuhokpudkyyxxdhalcnh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
 
-    // Inizializza Supabase e rendilo accessibile globalmente
-   window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Quando il DOM è pronto
     window.onload = async () => {
+      // Inizializza Supabase qui dentro, dopo che la libreria è caricata
+      window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
       const grid = document.getElementById('grid');
       const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
       const warnText = document.getElementById('warnText');
