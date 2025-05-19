@@ -1,27 +1,457 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Test Supabase createClient</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lotteria Asilo Mergozzo</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet" />
+<style>
+  * {
+    margin: 0; padding: 0; box-sizing: border-box;
+  }
+  body, html {
+    height: 100%;
+    font-family: 'Baloo 2', cursive;
+    background: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px;
+    user-select: none;
+  }
+  header {
+    font-size: 1.3rem;
+    background: #ffeaa7;
+    width: 100%;
+    padding: 12px;
+    text-align: center;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #333;
+  }
+  #countdown {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #555;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    gap: 6px;
+    width: 100vw;
+    max-width: 960px;
+    height: calc(100vh - 190px);
+    max-height: 720px;
+  }
+  .cell {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    border: 1.5px solid #ddd;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #222;
+    padding: 4px 2px;
+    text-align: center;
+    transition: box-shadow 0.3s ease, background-color 0.3s ease;
+    font-weight: 600;
+    user-select: none;
+  }
+  .cell .number {
+    font-size: 1.4rem;
+  }
+  .cell .name {
+    font-size: 0.85rem;
+    margin-top: 4px;
+    word-break: break-word;
+    color: #444;
+    font-weight: 400;
+  }
+  .cell.selected {
+    background-color: #98fb987d;
+    border-color: #4caf50;
+    cursor: not-allowed;
+    box-shadow: 0 0 6px #4caf50;
+  }
+  .cell.selecting {
+    box-shadow: 0 0 12px 3px #ff9800aa;
+    background-color: #fff3e0;
+  }
+  #confirmSelectionBtn {
+    margin-top: 14px;
+    font-size: 1.1rem;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    background-color: #ff9800;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 3px 7px #d67c00;
+    transition: background-color 0.25s ease;
+    user-select: none;
+    max-width: 400px;
+    width: 100%;
+  }
+  #confirmSelectionBtn:disabled {
+    background-color: #ccc;
+    cursor: default;
+    box-shadow: none;
+  }
+  #warnText {
+    margin-top: 6px;
+    font-size: 0.95rem;
+    color: #b33;
+    font-weight: 700;
+    max-width: 400px;
+    text-align: center;
+    min-height: 24px;
+  }
+  #adminBtn, #logoutAdminBtn {
+    margin: 8px 4px;
+    font-size: 1rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: none;
+    background-color: #1976d2;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 3px 6px #115293;
+    user-select: none;
+  }
+  #logoutAdminBtn {
+    background-color: #d32f2f;
+    box-shadow: 0 3px 6px #801414;
+    display: none;
+  }
+  #adminPanel {
+    display: none;
+    margin-top: 12px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  #adminControls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  #resetBtn, #printBtn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    background-color: #388e3c;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 3px 6px #246624;
+    user-select: none;
+  }
+  #resetBtn:hover, #printBtn:hover,
+  #adminBtn:hover, #logoutAdminBtn:hover {
+    filter: brightness(1.1);
+  }
+</style>
 </head>
 <body>
-  <h1>Test Supabase createClient</h1>
-  <div id="output">Caricamento...</div>
+<header>
+  Lotteria di fine anno dell'asilo di Mergozzo!!<br />
+  Scegli uno o più numeri, in palio tanti premi!!<br />
+  Per ogni numero sono richiesti 2,50€ o un'offerta superiore da lasciare in busta chiusa nell'armadietto di Arianna F. ;)<br />
+  Grazie mille del tuo aiuto ;)
+</header>
 
-  <!-- Libreria Supabase con defer -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+<div id="countdown">Caricamento countdown...</div>
 
-  <!-- Script che usa createClient -->
-  <script defer>
-    const SUPABASE_URL = "https://tuhokpudkyyxxdhalcnh.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
+<button id="adminBtn" title="Accesso Admin">Accesso Admin</button>
+<button id="logoutAdminBtn" title="Logout Admin">Logout Admin</button>
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<div id="adminPanel">
+  <div id="adminControls">
+    <button id="resetBtn" title="Annulla un numero">Annulla un numero</button>
+    <button id="printBtn" title="Stampa tabellone">Stampa tabellone</button>
+  </div>
+</div>
 
-    window.supabaseClient = supabase;
+<div id="grid" aria-label="Tabellone lotteria numeri da 1 a 90"></div>
 
-    document.getElementById('output').textContent = "Supabase client creato con successo!";
-  </script>
-</body>
-</html>
+<div id="warnText"></div>
+<button id="confirmSelectionBtn" disabled>Conferma selezione</button>
+
+<!-- Libreria Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+
+<script>
+window.onload = async () => {
+  // Configurazione Supabase
+  const SUPABASE_URL = "https://tuhokpudkyyxxdhalcnh.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const grid = document.getElementById('grid');
+  const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
+  const warnText = document.getElementById('warnText');
+  const adminBtn = document.getElementById('adminBtn');
+  const logoutAdminBtn = document.getElementById('logoutAdminBtn');
+  const adminPanel = document.getElementById('adminPanel');
+  const resetBtn = document.getElementById('resetBtn');
+  const printBtn = document.getElementById('printBtn');
+  const countdownEl = document.getElementById('countdown');
+
+  let adminLoggedIn = false;
+  let selectingNumbers = new Set();
+
+  // Data obiettivo countdown (28 maggio 2025, 14:00)
+  const targetDate = new Date("2025-05-28T14:00:00");
+
+  function updateCountdown() {
+    const now = new Date();
+    const diff = targetDate - now;
+    if (diff <= 0) {
+      countdownEl.textContent = "La lotteria è iniziata o è terminata!";
+      return;
+    }
+    const days = Math.floor(diff / (1000*60*60*24));
+    const hours = Math.floor((diff / (1000*60*60)) % 24);
+    const minutes = Math.floor((diff / (1000*60)) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+    countdownEl.textContent = `Countdown: ${days}g ${hours}h ${minutes}m ${seconds}s`;
+  }
+  setInterval(updateCountdown, 1000);
+  updateCountdown();
+
+  function getColorForNumber(num) {
+    return num % 2 === 0 ? '#d4f4dd' : '#f0fff4';
+  }
+
+  // Crea la griglia dei numeri da 1 a 90
+  function buildGrid() {
+    grid.innerHTML = '';
+    for (let i = 1; i <= 90; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.backgroundColor = getColorForNumber(i);
+      cell.dataset.number = i;
+      cell.innerHTML = `<div class="number">${i}</div><div class="name"></div>`;
+      grid.appendChild(cell);
+
+      cell.addEventListener('click', () => {
+        if (cell.classList.contains('selected') || adminLoggedIn) return;
+        if (selectingNumbers.has(i)) {
+          selectingNumbers.delete(i);
+          cell.classList.remove('selecting');
+        } else {
+          selectingNumbers.add(i);
+          cell.classList.add('selecting');
+        }
+        confirmSelectionBtn.disabled = selectingNumbers.size === 0;
+        warnText.textContent = '';
+      });
+    }
+  }
+
+  // Carica le selezioni già presenti da Supabase e aggiorna la griglia
+  async function loadSelections() {
+    const { data, error } = await supabaseClient
+      .from('lottery_selections')
+      .select('*');
+
+    if (error) {
+      console.error("Errore caricamento selezioni:", error);
+      warnText.textContent = "Errore caricamento dati. Riprova più tardi.";
+      return;
+    }
+
+    data.forEach(entry => {
+      const num = entry.number;
+      const name = entry.name;
+      const cell = grid.querySelector(`.cell[data-number="${num}"]`);
+      if (cell) {
+        cell.classList.add('selected');
+        cell.querySelector('.name').textContent = name;
+      }
+    });
+  }
+
+  // Funzione per confermare la selezione
+  confirmSelectionBtn.addEventListener('click', async () => {
+    if (selectingNumbers.size === 0) return;
+
+    const name = prompt("Inserisci il nome del bambino per la/le selezione/i:");
+    if (!name || !name.trim()) {
+      warnText.textContent = "Nome non valido, riprova.";
+      return;
+    }
+
+    // Controlla se i numeri selezionati sono ancora liberi
+    const { data: existing, error: errCheck } = await supabaseClient
+      .from('lottery_selections')
+      .select('*')
+      .in('number', Array.from(selectingNumbers));
+
+    if (errCheck) {
+      warnText.textContent = "Errore verifica disponibilità, riprova.";
+      return;
+    }
+    if (existing.length > 0) {
+      warnText.textContent = `Alcuni numeri sono già stati selezionati: ${existing.map(e => e.number).join(', ')}`;
+      // Deseleziona i numeri già presi
+      existing.forEach(e => {
+        selectingNumbers.delete(e.number);
+        const cell = grid.querySelector(`.cell[data-number="${e.number}"]`);
+        if (cell) cell.classList.remove('selecting');
+      });
+      confirmSelectionBtn.disabled = selectingNumbers.size === 0;
+      return;
+    }
+
+    // Inserisci i numeri nel DB
+    const inserts = Array.from(selectingNumbers).map(num => ({
+      number: num,
+      name: name.trim()
+    }));
+
+    const { error: errInsert } = await supabaseClient
+      .from('lottery_selections')
+      .insert(inserts);
+
+    if (errInsert) {
+      warnText.textContent = "Errore salvataggio dati, riprova.";
+      return;
+    }
+
+    // Aggiorna griglia UI
+    inserts.forEach(entry => {
+      const cell = grid.querySelector(`.cell[data-number="${entry.number}"]`);
+      if (cell) {
+        cell.classList.remove('selecting');
+        cell.classList.add('selected');
+        cell.querySelector('.name').textContent = entry.name;
+      }
+    });
+
+    selectingNumbers.clear();
+    confirmSelectionBtn.disabled = true;
+    warnText.textContent = "Selezione salvata con successo! Grazie!";
+  });
+
+  // ADMIN LOGIN
+  adminBtn.addEventListener('click', () => {
+    const password = prompt("Inserisci la password admin:");
+    if (password === "admin123") {  // Sostituisci con la tua password reale
+      adminLoggedIn = true;
+      adminPanel.style.display = "block";
+      logoutAdminBtn.style.display = "inline-block";
+      adminBtn.style.display = "none";
+      warnText.textContent = "Accesso admin effettuato.";
+    } else {
+      warnText.textContent = "Password errata.";
+    }
+  });
+
+  logoutAdminBtn.addEventListener('click', () => {
+    adminLoggedIn = false;
+    adminPanel.style.display = "none";
+    logoutAdminBtn.style.display = "none";
+    adminBtn.style.display = "inline-block";
+    warnText.textContent = "Logout effettuato.";
+  });
+
+  // RESET - annulla una selezione (admin)
+  resetBtn.addEventListener('click', async () => {
+    if (!adminLoggedIn) return;
+    const numStr = prompt("Inserisci il numero da annullare:");
+    const num = Number(numStr);
+    if (!num || num < 1 || num > 90) {
+      warnText.textContent = "Numero non valido.";
+      return;
+    }
+    // Controlla se numero è selezionato
+    const cell = grid.querySelector(`.cell[data-number="${num}"]`);
+    if (!cell || !cell.classList.contains('selected')) {
+      warnText.textContent = "Numero non selezionato.";
+      return;
+    }
+
+    // Elimina dal DB
+    const { error } = await supabaseClient
+      .from('lottery_selections')
+      .delete()
+      .eq('number', num);
+
+    if (error) {
+      warnText.textContent = "Errore durante l'eliminazione.";
+      return;
+    }
+
+    // Aggiorna UI
+    cell.classList.remove('selected');
+    cell.querySelector('.name').textContent = "";
+    warnText.textContent = `Numero ${num} annullato con successo.`;
+  });
+
+  // STAMPA tabellone (solo area admin)
+  printBtn.addEventListener('click', () => {
+    if (!adminLoggedIn) return;
+
+    // Crea nuova finestra con contenuto solo del tabellone
+    const printWindow = window.open('', '_blank');
+    const style = `
+      <style>
+        body { font-family: 'Baloo 2', cursive; padding: 20px; }
+        .cell { 
+          display: inline-block; 
+          width: 60px; 
+          height: 60px; 
+          margin: 4px; 
+          border-radius: 6px; 
+          border: 1.5px solid #4caf50; 
+          background-color: #98fb98; 
+          text-align: center; 
+          vertical-align: top;
+          font-weight: 700;
+          color: #222;
+        }
+        .number { font-size: 1.6rem; }
+        .name { font-size: 1rem; margin-top: 4px; }
+      </style>
+    `;
+
+    let html = '<h2>Tabellone Lotteria - Asilo Mergozzo</h2><div>';
+
+    // Per ogni numero da 1 a 90, mostra la cella con numero e nome (se presente)
+     for(let i = 1; i <= 90; i++) {
+      const cell = grid.querySelector(`.cell[data-number="${i}"]`);
+      if (cell && cell.classList.contains('selected')) {
+        const name = cell.querySelector('.name').textContent;
+        html += `
+          <div class="cell">
+            <div class="number">${i}</div>
+            <div class="name">${name}</div>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="cell">
+            <div class="number">${i}</div>
+            <div class="name">-</div>
+          </div>
+        `;
+      }
+    }
+
+    html += '</div>';
+    printWindow.document.write(`<html><head><title>Stampa Tabellone</title>${style}</head><body>${html}</body></html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  });
