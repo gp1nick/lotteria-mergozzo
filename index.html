@@ -194,7 +194,7 @@
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGNsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM";
 
 // Inizializza Supabase
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const grid = document.getElementById('grid');
 const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
 const warnText = document.getElementById('warnText');
