@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lotteria Asilo Mergozzo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body, html {
+      height: 100%;
+      font-family: 'Baloo 2', cursive;
+      background: #f9f9f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 10px;
+      user-select: none;
+    }
+    header {
+      font-size: 1.3rem;
+      background: #ffeaa7;
+      width: 100%;
+      padding: 12px;
+      text-align: center;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: #333;
+    }
+    #countdown {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: #555;
+    }
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(9, 1fr);
+      gap: 6px;
+      width: 100vw;
+      max-width: 960px;
+      height: calc(100vh - 190px);
+      max-height: 720px;
+    }
+    .cell {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: 6px;
+      border: 1.5px solid #ddd;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #222;
+      padding: 4px 2px;
+      text-align: center;
+      transition: box-shadow 0.3s ease, background-color 0.3s ease;
+      font-weight: 600;
+      user-select: none;
+    }
+    .cell .number {
+      font-size: 1.4rem;
+    }
+    .cell .name {
+      font-size: 0.85rem;
+      margin-top: 4px;
+      word-break: break-word;
+      color: #444;
+      font-weight: 400;
+    }
+    .cell.selected {
+      background-color: #98fb987d;
+      border-color: #4caf50;
+      cursor: not-allowed;
+      box-shadow: 0 0 6px #4caf50;
+    }
+    .cell.selecting {
+      box-shadow: 0 0 12px 3px #ff9800aa;
+      background-color: #fff3e0;
+    }
+    #confirmSelectionBtn {
+      margin-top: 14px;
+      font-size: 1.1rem;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      background-color: #ff9800;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 3px 7px #d67c00;
+      transition: background-color 0.25s ease;
+      user-select: none;
+      max-width: 400px;
+      width: 100%;
+    }
+    #confirmSelectionBtn:disabled {
+      background-color: #ccc;
+      cursor: default;
+      box-shadow: none;
+    }
+    #warnText {
+      margin-top: 6px;
+      font-size: 0.95rem;
+      color: #b33;
+      font-weight: 700;
+      max-width: 400px;
+      text-align: center;
+    }
+    #adminBtn, #logoutAdminBtn {
+      margin: 8px 4px;
+      font-size: 1rem;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: none;
+      background-color: #1976d2;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 3px 6px #115293;
+      user-select: none;
+    }
+    #logoutAdminBtn {
+      background-color: #d32f2f;
+      box-shadow: 0 3px 6px #801414;
+      display: none;
+    }
+    #adminPanel {
+      display: none;
+      margin-top: 12px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    #adminControls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    #resetBtn, #printBtn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      background-color: #388e3c;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 3px 6px #246624;
+      user-select: none;
+    }
+    #resetBtn:hover, #printBtn:hover,
+    #adminBtn:hover, #logoutAdminBtn:hover {
+      filter: brightness(1.1);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    Lotteria di fine anno dell'asilo di Mergozzo!!<br />
+    Scegli uno o più numeri, in palio tanti premi!!<br />
+    Per ogni numero sono richiesti 2,50€ o un'offerta superiore da lasciare in busta chiusa nell'armadietto di Arianna F. ;)<br />
+    Grazie mille del tuo aiuto ;)
+  </header>
+
+  <div id="countdown">Caricamento countdown...</div>
+
+  <button id="adminBtn" title="Accesso Admin">Accesso Admin</button>
+  <button id="logoutAdminBtn" title="Logout Admin">Logout Admin</button>
+
+  <div id="adminPanel">
+    <div id="adminControls">
+      <button id="resetBtn" title="Annulla un numero">Annulla un numero</button>
+      <button id="printBtn" title="Stampa tabellone">Stampa tabellone</button>
+    </div>
+  </div>
+
+  <div id="grid" aria-label="Tabellone lotteria numeri da 1 a 90"></div>
+
+  <div id="warnText"></div>
+  <button id="confirmSelectionBtn" disabled>Conferma selezione</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://tuhokpudkyyxxdhalcnh.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1aG9rcHVka3l5eHhkaGFsY25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE2ODUsImV4cCI6MjA2MzI1NzY4NX0.RElV9gEtiWo1ZmicBOjlOL-2R-hhOoue3OD5IhRlRVM"; // Sostituisci con la tua anon key
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const countdownEl = document.getElementById('countdown');
+    const grid = document.getElementById('grid');
+    const adminBtn = document.getElementById('adminBtn');
+    const logoutAdminBtn = document.getElementById('logoutAdminBtn');
+    const adminPanel = document.getElementById('adminPanel');
+    const resetBtn = document.getElementById('resetBtn');
+    const printBtn = document.getElementById('printBtn');
+    const warnText = document.getElementById('warnText');
+    const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
+
+    let adminLoggedIn = false;
+    let data = {};
+    let selectingNumbers = new Set();
+
+    const targetDate = new Date("2025-05-28T14:00:00");
+
+    function getColorForNumber(n) {
+      const colors = [
+        '#FFCDD2','#F8BBD0','#E1BEE7','#D1C4E9','#C5CAE9',
+        '#BBDEFB','#B3E5FC','#B2EBF2','#B2DFDB','#C8E6C9',
+        '#DCEDC8','#F0F4C3','#FFF9C4','#FFECB3','#FFE0B2',
+        '#FFCCBC','#D7CCC8','#CFD8DC'
+      ];
+      return colors[(n-1) % colors.length];
+    }
+
+    function buildGrid() {
+      grid.innerHTML = '';
+      for (let i=1; i<=90; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.number = i;
+        cell.style.backgroundColor = getColorForNumber(i);
+
+        const numberSpan = document.createElement('div');
+        numberSpan.classList.add('number');
+        numberSpan.textContent = i;
+        cell.appendChild(numberSpan);
+
+        const
+
+
+
+
+
+ChatGPT ha detto:
+nameSpan = document.createElement('div');
+nameSpan.classList.add('name');
+cell.appendChild(nameSpan);
+
+javascript
+Copia
+Modifica
+    cell.addEventListener('click', () => onCellClick(i));
+
+    grid.appendChild(cell);
+  }
+}
+
+async function fetchData() {
+  const { data: rows, error } = await supabase
+    .from('lotteria')
+    .select();
+
+  if(error) {
+    console.error("Errore caricamento dati:", error);
+    return;
+  }
+
+  data = {};
+  rows.forEach(row => {
+    data[row.number] = row.name;
+  });
+
+  updateGrid();
+}
+
+function updateGrid() {
+  for(let i=1; i<=90; i++) {
+    const cell = grid.querySelector(`.cell[data-number="${i}"]`);
+    const nameSpan = cell.querySelector('.name');
+    if(data[i]) {
+      cell.classList.add('selected');
+      cell.classList.remove('selecting');
+      cell.style.cursor = 'default';
+      nameSpan.textContent = data[i];
+    } else {
+      cell.classList.remove('selected');
+      cell.style.cursor = 'pointer';
+      nameSpan.textContent = '';
+      if(selectingNumbers.has(i)) {
+        cell.classList.add('selecting');
+      } else {
+        cell.classList.remove('selecting');
+      }
+    }
+  }
+  updateConfirmButton();
+}
+
+function onCellClick(num) {
+  if(data[num]) return; // già preso
+  if(selectingNumbers.has(num)) {
+    selectingNumbers.delete(num);
+  } else {
+    selectingNumbers.add(num);
+  }
+  updateGrid();
+}
+
+function updateConfirmButton() {
+  confirmSelectionBtn.disabled = selectingNumbers.size === 0;
+  if(selectingNumbers.size > 0) {
+    warnText.textContent = "Attenzione: dopo conferma la selezione non sarà modificabile.";
+  } else {
+    warnText.textContent = "";
+  }
+}
+
+async function confirmSelection() {
+  if(selectingNumbers.size === 0) return;
+
+  let name = prompt("Inserisci nome e cognome completi del bambino:");
+  if(!name || name.trim().split(/\s+/).length < 2) {
+    alert("Inserisci nome e cognome completi, almeno due parole.");
+    return;
+  }
+  name = name.trim();
+
+  // Controlla se numeri ancora liberi
+  await fetchData();
+  for(let num of selectingNumbers) {
+    if(data[num]) {
+      alert(`Il numero ${num} è stato appena preso da ${data[num]}. Ricarica la pagina.`);
+      selectingNumbers.clear();
+      updateGrid();
+      return;
+    }
+  }
+
+  // Inserisce dati
+  for(let num of selectingNumbers) {
+    const { error } = await supabase
+      .from('lotteria')
+      .insert({ number: num, name: name });
+    if(error) {
+      alert("Errore inserimento dati. Riprova.");
+      console.error(error);
+      return;
+    }
+  }
+  alert("Numeri confermati! Grazie per la partecipazione.");
+  selectingNumbers.clear();
+  await fetchData();
+  updateConfirmButton();
+}
+
+// Admin login semplice (prompt password)
+async function adminLogin() {
+  const pwd = prompt("Inserisci password Admin:");
+  if(!pwd) return;
+  if(pwd === "asilo2025") {
+    adminLoggedIn = true;
+    adminBtn.style.display = 'none';
+    logoutAdminBtn.style.display = 'inline-block';
+    adminPanel.style.display = 'block';
+    alert("Accesso Admin riuscito!");
+  } else {
+    alert("Password errata.");
+  }
+}
+function adminLogout() {
+  adminLoggedIn = false;
+  adminBtn.style.display = 'inline-block';
+  logoutAdminBtn.style.display = 'none';
+  adminPanel.style.display = 'none';
+}
+
+// Reset numero admin: chiede numero, elimina dalla tabella
+async function adminResetNumber() {
+  if(!adminLoggedIn) return alert("Devi essere Admin.");
+  let num = prompt("Inserisci il numero da annullare (1-90):");
+  if(!num) return;
+  num = Number(num);
+  if(isNaN(num) || num<1 || num>90) {
+    alert("Numero non valido");
+    return;
+  }
+  if(!data[num]) {
+    alert("Numero non assegnato.");
+    return;
+  }
+  if(confirm(`Vuoi davvero annullare il numero ${num} assegnato a ${data[num]}?`)) {
+    const { error } = await supabase
+      .from('lotteria')
+      .delete()
+      .eq('number', num);
+    if(error) {
+      alert("Errore durante annullamento.");
+      console.error(error);
+      return;
+    }
+    alert(`Numero ${num} annullato.`);
+    await fetchData();
+  }
+}
+
+// Stampa tabellone: apre nuova finestra con tabella completa
+function adminPrint() {
+  if(!adminLoggedIn) return alert("Devi essere Admin.");
+  let w = window.open('', '_blank');
+  if(!w) return alert("Pop-up bloccato, abilita finestre pop-up.");
+
+  let html = `
+  <html><head><title>Tabellone Lotteria Asilo</title>
+  <style>
+    body { font-family: 'Baloo 2', cursive; padding: 10px; }
+    table { border-collapse: collapse; width: 100%; max-width: 800px; }
+    th, td { border: 1px solid #333; padding: 8px; text-align: center; }
+    th { background-color: #ffcc80; }
+    td.number { font-weight: 700; }
+    td.name { font-style: italic; color: #444; }
+  </style>
+  </head><body>
+  <h1>Tabellone Lotteria Asilo Mergozzo 2025</h1>
+  <table>
+  <tr><th>Numero</th><th>Nome e Cognome</th></tr>`;
+
+  for(let i=1; i<=90; i++) {
+    html += `<tr><td class="number">${i}</td><td class="name">${data[i] || '-'}</td></tr>`;
+  }
+
+  html += `</table></body></html>`;
+
+  w.document.write(html);
+  w.document.close();
+}
+
+function updateCountdown() {
+  const now = new Date();
+  let diff = targetDate - now;
+
+  if(diff <= 0) {
+    countdownEl.textContent = "La lotteria è iniziata o terminata!";
+    confirmSelectionBtn.disabled = true;
+    return;
+  }
+  let days = Math.floor(diff / (1000*60*60*24));
+  diff -= days*(1000*60*60*24);
+  let hours = Math.floor(diff / (1000*60*60));
+  diff -= hours*(1000*60*60);
+  let minutes = Math.floor(diff / (1000*60));
+  diff -= minutes*(1000*60);
+  let seconds = Math.floor(diff / 1000);
+
+  countdownEl.textContent = `Countdown alla chiusura iscrizioni: ${days}g ${hours}h ${minutes}m ${seconds}s`;
+}
+
+confirmSelectionBtn.addEventListener('click', confirmSelection);
+adminBtn.addEventListener('click', adminLogin);
+logoutAdminBtn.addEventListener('click', adminLogout);
+resetBtn.addEventListener('click', adminResetNumber);
+printBtn.addEventListener('click', adminPrint);
+
+(async function init() {
+  buildGrid();
+  await fetchData();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+})();
+</script> </body> </html> ```
